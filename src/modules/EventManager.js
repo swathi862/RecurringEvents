@@ -1,6 +1,6 @@
 const remoteURL = "http://localhost:8000/calendar"
 
-export default {
+const EventManager = {
   get(id) {
     return fetch(`${remoteURL}/events/${id}/`).then(result => result.json())
   },
@@ -32,3 +32,5 @@ export default {
     }).then(data => data.json()).then((response)=>console.log(response));
   }
 }
+
+export default EventManager

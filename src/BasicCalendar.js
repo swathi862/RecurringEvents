@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { Calendar, momentLocalizer } from 'react-big-calendar';
-import { RRule, RRuleSet, rrulestr } from 'rrule'
+import { RRule } from 'rrule'
 import moment from 'moment';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import EventManager from './modules/EventManager'
@@ -12,9 +12,9 @@ class BasicCalendar extends Component {
   //   super()
   //   const now = new Date();
   //   let events = [];
-  //   console.log(rule.all())
+  //   // console.log(rule.all())
   //   console.log(now)
-  //   const rRuleEvents = rule.all()
+  //   // const rRuleEvents = rule.all()
   //   // for(ruleEvent in rRuleEvents){
   //     events = [
   //       {
@@ -43,16 +43,16 @@ class BasicCalendar extends Component {
   //         end: new Date().setDate(new Date().getDate() + 5),
   //       },
   //     ]
-  //     rRuleEvents.map(ruleDate =>
-  //       events.push(
-  //       {
-  //         title: 'rRule Event',
-  //         start: ruleDate,
-  //         // end: new Date().setDate(ruleDate.getDate() + 2),
-  //         end: ruleDate,
-  //       },
-  //       )
-  //     )
+  //     // rRuleEvents.map(ruleDate =>
+  //     //   events.push(
+  //     //   {
+  //     //     title: 'rRule Event',
+  //     //     start: ruleDate,
+  //     //     // end: new Date().setDate(ruleDate.getDate() + 2),
+  //     //     end: ruleDate,
+  //     //   },
+  //     //   )
+  //     // )
   //   this.state = {
   //     events
   //   };
