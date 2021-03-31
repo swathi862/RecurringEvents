@@ -1,15 +1,17 @@
 import React, { Component } from "react"
+import { RRule } from 'rrule'
+import moment, { now } from 'moment';
 import EventManager from "./modules/EventManager"
 
 class EventEditForm extends Component {
     state = {
       title: "",
-      start: null,
-      end: null,
-      recurring: null,
-      count: null,
-      start_duration: null,
-      end_duration: null,
+      start: "",
+      end: "",
+      recurring: "",
+      count: "",
+      end_recurrence: "",
+      ical_string: "",
       loadingStatus: true,
     };
 
@@ -19,19 +21,44 @@ class EventEditForm extends Component {
       this.setState(stateToChange)
     }
 
+    frequency = (eventFrequency) => {
+        if(eventFrequency === 'YEARLY'){
+          return RRule.YEARLY
+        }
+        else if(eventFrequency === 'MONTHLY'){
+          return RRule.MONTHLY
+        }
+        else if(eventFrequency === 'WEEKLY'){
+          return RRule.WEEKLY
+        }
+        else if(eventFrequency === 'DAILY'){
+          return RRule.DAILY
+        }
+    }
+
     updateExistingEvent = evt => {
+      let rule = null;
       evt.preventDefault()
       this.setState({ loadingStatus: true });
+      
+      if(this.state.recurring !== (null || 'DOES-NOT-REPEAT')){
+
+            rule = new RRule({
+                freq: this.frequency(this.state.recurring), 
+                count: this.state.count,
+                dtstart: new Date(this.state.start),
+                until: new Date(this.state.end_recurrence)
+            }).toString()
+            console.log(rule)
+            
+    }
+      
       const editedEvent = {
         id: this.props.match.params.eventId,
         title: this.state.title,
-        start: this.state.start,
-        end: this.state.end,
-        recurring: this.state.recurring,
-        count: this.state.count,
-        start_duration: this.state.start_duration,
-        end_duration: this.state.end_duration,
-        ical_string: null,
+        start: moment(this.state.start),
+        end: moment(this.state.end),
+        ical_string: rule,
       };
 
       EventManager.update(editedEvent)
@@ -40,19 +67,32 @@ class EventEditForm extends Component {
 
     componentDidMount() {
       EventManager.get(this.props.match.params.eventId)
+
       .then(event => {
+        console.log(moment.utc(event.start).local().format('YYYY-MM-DDTHH:mm:ss'))
+
           this.setState({
             title: event.title,
-            start: event.start,
-            end: event.end,
-            recurring: event.recurring,
-            count: event.count,
-            start_duration: event.start_duration,
-            end_duration: event.end_duration,
+            start: moment.utc(event.start).local().format('YYYY-MM-DDTHH:mm:ss'),
+            end: moment.utc(event.end).local().format('YYYY-MM-DDTHH:mm:ss'),
             ical_string: event.ical_string,
             loadingStatus: false,
+          })
+            if(this.state.ical_string){
+                var ical_array = this.state.ical_string.split(';').map(ical_option => ical_option.split('='))
+
+                this.setState({
+                    recurring: ((ical_array[0])[1]),
+                    count: (ical_array[1])[1],
+                    end_recurrence: moment.utc((ical_array[2])[1]).local().format('YYYY-MM-DDTHH:mm:ss')
+                })
+            } else{
+                this.setState({
+                    recurring: 'DOES-NOT-REPEAT'
+                })
+            }
+            
           });
-      });
     }
 
     render() {
@@ -73,26 +113,23 @@ class EventEditForm extends Component {
 
               <label htmlFor="start">Start: </label>
               <input
-                // type="datetime-local"
-                type="text"
+                type="datetime-local"
                 required
                 onChange={this.handleFieldChange}
                 id="start"
                 value={this.state.start}
-                // value={new Date(this.state.start).toISOString().slice(0,16)}
               /><br/>
 
               <label htmlFor="end">End: </label>
               <input
-                // type="datetime-local"
-                type="text"
+                type="datetime-local"
                 required
                 onChange={this.handleFieldChange}
                 id="end"
+                min={this.state.start}
                 value={this.state.end}
-                // value={new Date(this.state.end).toISOString().slice(0,16)}
               /><br/>
-
+            
               <label htmlFor="recurring">Recurring: </label>
               <select
                 id="recurring"
@@ -107,6 +144,8 @@ class EventEditForm extends Component {
                 <option value='YEARLY'>Yearly</option>
               </select><br/>
 
+            {this.state.recurring !== (null || 'DOES-NOT-REPEAT') ?
+            <>
               <label htmlFor="count">Count: </label>
               <input
                 type="text"
@@ -116,27 +155,19 @@ class EventEditForm extends Component {
                 value={this.state.count}
               /><br/>
 
-              <label htmlFor="start_duration">When will this recurring event start? </label>
+              <label htmlFor="end_recurrence">Until when will this recurring event keep occuring? </label>
               <input
-                // type="datetime-local"
-                type="text"
+                type="datetime-local"
                 required
                 onChange={this.handleFieldChange}
-                id="start_duration"
-                value={this.state.start_duration}
-                // value={new Date(this.state.start_duration).toISOString().slice(0,16)}
+                id="end_recurrence"
+                min={this.state.end}
+                value={this.state.end_recurrence}
               /><br/>
-
-              <label htmlFor="end_duration">Until when will this recurring event keep occuring? </label>
-              <input
-                // type="datetime-local"
-                type="text"
-                required
-                onChange={this.handleFieldChange}
-                id="end_duration"
-                value={this.state.end_duration}
-                // value={new Date(this.state.end_duration).toISOString().slice(0,16)}
-              /><br/>
+            </>
+              :
+                null
+            }
 
             </div>
             <div className="alignRight">

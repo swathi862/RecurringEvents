@@ -65,74 +65,133 @@ class BasicCalendar extends Component {
   componentWillMount(){
 
     let calendarEvents = []
-    let rule;
+    // let rule;
 
-    function recurringEvents(singleEvent){
-      if(singleEvent.recurring !== ('DOES-NOT-REPEAT' || null)){
-          return singleEvent;
-      }
-      else{
-        calendarEvents.push(singleEvent)        
-      }
-    }
+    // function recurringEvents(singleEvent){
+    //   if(singleEvent.recurring !== ('DOES-NOT-REPEAT' || null)){
+    //       return singleEvent;
+    //   }
+    //   else{
+    //     calendarEvents.push(singleEvent)        
+    //   }
+    // }
 
-    function frequency(eventFrequency){
-      if(eventFrequency === 'YEARLY'){
-        return RRule.YEARLY
-      }
-      else if(eventFrequency === 'MONTHLY'){
-        return RRule.MONTHLY
-      }
-      else if(eventFrequency === 'WEEKLY'){
-        return RRule.WEEKLY
-      }
-      else if(eventFrequency === 'DAILY'){
-        return RRule.DAILY
-      }
-    }
+    // function frequency(eventFrequency){
+    //   if(eventFrequency === 'YEARLY'){
+    //     return RRule.YEARLY
+    //   }
+    //   else if(eventFrequency === 'MONTHLY'){
+    //     return RRule.MONTHLY
+    //   }
+    //   else if(eventFrequency === 'WEEKLY'){
+    //     return RRule.WEEKLY
+    //   }
+    //   else if(eventFrequency === 'DAILY'){
+    //     return RRule.DAILY
+    //   }
+    // }
 
-    // fetch('http://localhost:8000/calendar/events/')
-    //   .then(result => result.json())
       EventManager.getAll()
       .then(apiEvents => {
-        console.log(apiEvents)
-        const recurringEventsArray = apiEvents.filter(recurringEvents)
-        recurringEventsArray.map(singleEvent => {
-          rule = new RRule({
-            freq: frequency(singleEvent.recurring), 
-            count: singleEvent.count,
-            dtstart: new Date(singleEvent.start_duration),
-            until: new Date(singleEvent.end_duration)
-          })
+        console.log('apiEvents', apiEvents)
+        // the events I am receiving from the DB already have ical_string populated if they
+        // are a recurring event; null ical_string if they are not
+        const convertedEvents = apiEvents.map(({ id, title, start, end, ical_string, ...rest }) => {
 
-          // var ical_rule = `FREQ=${singleEvent.recurring};COUNT=${singleEvent.count};dtstart=${singleEvent.start_duration};until=${singleEvent.end_duration}`
-          var ical_rule = rule.toString()
+          const mStart = moment.utc(start);
+          const mEnd = moment.utc(end);
+          return {
+            id: id,
+            title: title,
+            start: mStart,
+            end: mEnd,
+            duration: mEnd.diff(mStart),
+            rrule: (ical_string !== null ? RRule.fromString(ical_string) : ical_string),
 
-          fetch(`http://localhost:8000/calendar/events/${singleEvent.id}/`, {
-            method: 'PUT',
-            headers: { "Content-Type": "application/json; charset=UTF-8" },
-            body: JSON.stringify({ical_string: ical_rule,
-            title: singleEvent.title})
-          }).then((response) => {
-            response.json().then((response) => {
-            console.log(response);
+            // Add any additional key/value pairs here. i.e. if you add a new key "foo" to an apiEvent, it will
+            // automatically be stuck in here (avoids possibility of forgetting to modify it)
+            ...rest
+          };
+        });
+
+        convertedEvents.forEach(event => {
+          // if the the event has a rrule
+          if (event.rrule !== null) {
+            const occurrences = event.rrule.all();
+
+            //collects recurring events
+            occurrences.forEach(calEventDt => {
+              const m = moment(calEventDt);
+
+              calendarEvents.push(
+                {
+                  id: event.id,
+                  title: event.title,
+                  start: calEventDt,
+                  end: m.add(event.duration).toDate()
+                },
+              )
             })
-          })
+          } else {
 
-          const rRuleEvents = rule.all()
+            // const mEStart = moment(event.start)
+            // const mEEnd = moment(event.end)
 
-          rRuleEvents.map(ruleDate =>
             calendarEvents.push(
-            {
-              id: singleEvent.id,
-              title: singleEvent.title,
-              start: ruleDate,
-              end: ruleDate,
-            },
-            )
-          )
+              {
+                id: event.id,
+                title: event.title,
+                //makes calendar times same as db times
+                // start: moment(event.start),
+                // end: moment(event.end),
 
+                //makes week/day views work
+                start: event.start.toDate(),
+                end: event.end.toDate()
+              },
+            )
+          }
         })
+
+
+
+        // const recurringEventsArray = apiEvents.filter(recurringEvents)
+        // recurringEventsArray.map(singleEvent => {
+        //   rule = new RRule({
+        //     freq: frequency(singleEvent.recurring), 
+        //     count: singleEvent.count,
+        //     // dtstart: new Date(singleEvent.start_duration),
+        //     dtstart: new Date(singleEvent.start),
+        //     until: new Date(singleEvent.end_recurrence)
+        //   })
+
+        //   var ical_rule = rule.toString()
+
+        //   fetch(`http://localhost:8000/calendar/events/${singleEvent.id}/`, {
+        //     method: 'PUT',
+        //     headers: { "Content-Type": "application/json; charset=UTF-8" },
+        //     body: JSON.stringify({ical_string: ical_rule,
+        //     title: singleEvent.title})
+        //   }).then((response) => {
+        //     response.json().then((response) => {
+        //     // console.log(response);
+        //     })
+        //   })
+
+        //   const rRuleEvents = rule.all()
+
+        //   rRuleEvents.map(ruleDate =>
+        //     calendarEvents.push(
+        //     {
+        //       id: singleEvent.id,
+        //       title: singleEvent.title,
+        //       start: ruleDate,
+        //       end: ruleDate,
+        //     },
+        //     )
+        //   )
+
+        // })
         
       })
     console.log('calendarEvents: ', calendarEvents)
@@ -142,11 +201,12 @@ class BasicCalendar extends Component {
 
   }
 
-  shouldComponentUpdate(nextState){
-    return this.state.events !== nextState.events
-  }
+  // shouldComponentUpdate(nextState){
+  //   return this.state.events !== nextState.events
+  // }
 
   render() {
+    console.log("this.state.events", this.state.events)
     return (
       <>
         <div style={{ height: '400pt', margin: '2em'}}>

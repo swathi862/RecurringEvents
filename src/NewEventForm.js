@@ -1,4 +1,6 @@
+import moment from "moment";
 import React, { Component } from "react"
+import { RRule } from 'rrule'
 import EventManager from "./modules/EventManager"
 
 class NewEventForm extends Component {
@@ -8,8 +10,7 @@ class NewEventForm extends Component {
       end: null,
       recurring: null,
       count: 0,
-      start_duration: null,
-      end_duration: null,
+      end_recurrence: null,
       loadingStatus: true,
     };
 
@@ -19,20 +20,44 @@ class NewEventForm extends Component {
       this.setState(stateToChange)
     }
 
+    frequency = (eventFrequency) => {
+      if(eventFrequency === 'YEARLY'){
+        return RRule.YEARLY
+      }
+      else if(eventFrequency === 'MONTHLY'){
+        return RRule.MONTHLY
+      }
+      else if(eventFrequency === 'WEEKLY'){
+        return RRule.WEEKLY
+      }
+      else if(eventFrequency === 'DAILY'){
+        return RRule.DAILY
+      }
+    }
+
     createEvent = evt => {
+      let rule = null;
       evt.preventDefault()
       this.setState({ loadingStatus: true });
+
+      if(this.state.recurring !== (null || 'DOES-NOT-REPEAT')){
+
+          rule = new RRule({
+            freq: this.frequency(this.state.recurring), 
+            count: this.state.count,
+            dtstart: new Date(this.state.start),
+            until: new Date(this.state.end_recurrence)
+          }).toString()
+          console.log(rule)
+      }
+
       const newEvent = {
         title: this.state.title,
-        start: this.state.start,
-        end: this.state.end,
-        recurring: this.state.recurring,
-        count: this.state.count,
-        start_duration: (!this.state.start_duration ? this.state.start : new Date()),
-        end_duration: (!this.state.end_duration ? this.state.end : new Date()),
-        ical_string: null,
+        start: moment(this.state.start),
+        end: moment(this.state.end),
+        ical_string: rule,
       };
-
+      console.log("newEvent", newEvent)
       EventManager.post(newEvent)
       .then(() => this.props.history.push("/calendar"))
     }
@@ -65,6 +90,7 @@ class NewEventForm extends Component {
                 type="datetime-local"
                 required
                 onChange={this.handleFieldChange}
+                min={this.state.start}
                 id="end"
               /><br/>
 
@@ -88,18 +114,12 @@ class NewEventForm extends Component {
                 id="count"
               /><br/>
 
-              <label htmlFor="start_duration">When will this recurring event start? </label>
+              <label htmlFor="end_recurrence">Until when will this recurring event keep occuring? </label>
               <input
                 type="datetime-local"
                 onChange={this.handleFieldChange}
-                id="start_duration"
-              /><br/>
-
-              <label htmlFor="end_duration">Until when will this recurring event keep occuring? </label>
-              <input
-                type="datetime-local"
-                onChange={this.handleFieldChange}
-                id="end_duration"
+                min={this.state.end}
+                id="end_recurrence"
               /><br/>
 
             </div>
