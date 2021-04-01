@@ -51,9 +51,7 @@ class EventEditForm extends Component {
             
             if((this.state.recurring !== null) && 
             (this.state.recurring !== "DOES-NOT-REPEAT") && 
-            (this.state.recurring !== "") && 
-            (this.state.count) &&
-            (this.state.end_recurrence)){
+            (this.state.recurring !== "")){
 
                     rule = new RRule({
                         freq: this.frequency(this.state.recurring), 
@@ -64,8 +62,21 @@ class EventEditForm extends Component {
                     console.log(rule)
                     
             }
-            
-            if((this.state.count) && (this.state.end_recurrence) && (rule !== null)) {
+            if((this.state.recurring === 'YEARLY') || (this.state.recurring === 'MONTHLY') || (this.state.recurring === 'WEEKLY') || (this.state.recurring === 'DAILY'))
+            {
+                if((this.state.count) && (this.state.end_recurrence) && (rule !== null)) {
+                    const editedEvent = {
+                        id: this.props.match.params.eventId,
+                        title: this.state.title,
+                        start: moment(this.state.start),
+                        end: moment(this.state.end),
+                        ical_string: rule,
+                    };
+    
+                    EventManager.update(editedEvent)
+                    .then(() => this.props.history.push("/calendar"))
+                }
+            } else {
                 const editedEvent = {
                     id: this.props.match.params.eventId,
                     title: this.state.title,
@@ -77,6 +88,7 @@ class EventEditForm extends Component {
                 EventManager.update(editedEvent)
                 .then(() => this.props.history.push("/calendar"))
             }
+            
         }
     }
 

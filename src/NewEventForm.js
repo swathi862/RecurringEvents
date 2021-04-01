@@ -51,9 +51,7 @@ class NewEventForm extends Component {
 
         if((this.state.recurring !== null) && 
            (this.state.recurring !== 'DOES-NOT-REPEAT') && 
-           (this.state.recurring !== '') && 
-           (this.state.count) &&
-           (this.state.end_recurrence)){
+           (this.state.recurring !== '')){
 
             rule = new RRule({
                 freq: this.frequency(this.state.recurring), 
@@ -64,17 +62,30 @@ class NewEventForm extends Component {
             console.log(rule)
         }
 
-      if((this.state.count) && (this.state.end_recurrence) && (rule !== null)) {
-        const newEvent = {
-            title: this.state.title,
-            start: moment(this.state.start),
-            end: moment(this.state.end),
-            ical_string: rule,
-        };
-        console.log("newEvent", newEvent)
-        EventManager.post(newEvent)
-        .then(() => this.props.history.push("/calendar"))
-      }
+        if((this.state.recurring === 'YEARLY') || (this.state.recurring === 'MONTHLY') || (this.state.recurring === 'WEEKLY') || (this.state.recurring === 'DAILY'))
+        {
+            if((this.state.count) && (this.state.end_recurrence) && (rule !== null)) {
+                const newEvent = {
+                    title: this.state.title,
+                    start: moment(this.state.start),
+                    end: moment(this.state.end),
+                    ical_string: rule,
+                };
+                console.log("newEvent", newEvent)
+                EventManager.post(newEvent)
+                .then(() => this.props.history.push("/calendar"))
+            }
+        } else {
+            const newEvent = {
+                title: this.state.title,
+                start: moment(this.state.start),
+                end: moment(this.state.end),
+                ical_string: rule,
+            };
+            console.log("newEvent", newEvent)
+            EventManager.post(newEvent)
+            .then(() => this.props.history.push("/calendar"))
+        }
       }
     }
 

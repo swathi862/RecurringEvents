@@ -10,10 +10,11 @@ const localizer = momentLocalizer(moment);
 
 class BasicCalendar extends Component {
   state = {
-    events: []
+    events: null
   }
 
   componentWillMount(){
+  // async getEvents(){
 
     let calendarEvents = []
 
@@ -83,6 +84,10 @@ class BasicCalendar extends Component {
 
   }
 
+  // componentDidMount(){
+  //   this.getEvents();
+  // }
+
   // shouldComponentUpdate(nextState){
   //   return this.state.events !== nextState.events
   // }
@@ -91,17 +96,17 @@ class BasicCalendar extends Component {
     console.log("this.state.events", this.state.events)
     return (
       <Container>
-        <div style={{ height: '400pt', margin: '2em'}}>
-          <Calendar
-            events={this.state.events}
-            startAccessor="start"
-            endAccessor="end"
-            defaultDate={moment().toDate()}
-            localizer={localizer}
-            onSelectEvent={event => {this.props.history.push(`/calendar/${event.id}/edit`)}}
-          />
-        </div>
-        <Button variant="success" onClick={()=>this.props.history.push('/calendar/create')}>Create New Event</Button>
+          <div style={{ height: '400pt', margin: '2em'}}>
+            <Calendar
+              events={this.state.events}
+              startAccessor="start"
+              endAccessor="end"
+              defaultDate={moment().toDate()}
+              localizer={localizer}
+              onSelectEvent={event => {this.props.history.push(`/calendar/${event.id}/edit`)}}
+            />
+          </div>
+          <Button variant="success" onClick={()=>this.props.history.push('/calendar/create')}>Create New Event</Button>
       </Container>
     );
   }
