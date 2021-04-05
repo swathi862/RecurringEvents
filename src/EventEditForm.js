@@ -51,7 +51,7 @@ class EventEditForm extends Component {
             
             if((this.state.recurring !== null) && 
             (this.state.recurring !== "DOES-NOT-REPEAT") && 
-            (this.state.recurring !== "")){
+            (this.state.recurring !== "") && (this.state.end_recurrence)){
 
                     rule = new RRule({
                         freq: this.frequency(this.state.recurring), 
