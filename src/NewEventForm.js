@@ -11,16 +11,22 @@ class NewEventForm extends Component {
       start: null,
       end: null,
       recurring: null,
+      by_day: [],
       count: null,
       end_recurrence: null,
       loadingStatus: true,
       form_validated: false,
     };
 
-    handleFieldChange = evt => {
+    handleFieldChange = (event) => {
       const stateToChange = {}
-      stateToChange[evt.target.id] = evt.target.value
+      stateToChange[event.target.id] = event.target.value
       this.setState(stateToChange)
+    }
+
+    handleMultipleInputChange = (event) => {
+        const value = Array.from(event.target.selectedOptions, (item) => item.value);
+        this.setState({by_day: value});
     }
 
     handleValidation = (event) => {
@@ -43,18 +49,45 @@ class NewEventForm extends Component {
       }
     }
 
+    byday = (dayFrequency) => {
+        var days = []
+        if(dayFrequency){
+            dayFrequency.forEach(day => {
+                if (day === "MO"){
+                    days.push(RRule.MO)
+                }else if (day === "TU"){
+                    days.push(RRule.TU)
+                }else if(day === "WE"){
+                    days.push(RRule.WE)
+                }else if(day === "TH"){
+                    days.push(RRule.TH)
+                }else if(day === "FR"){
+                    days.push(RRule.FR)
+                }else if(day === "SA"){
+                    days.push(RRule.SA)
+                }else if(day === "SU"){
+                    days.push(RRule.SU)
+                }
+            })
+            return days
+        }
+    }
+
     createEvent = evt => {
       if ((this.state.title !== "") && (this.state.start !== null) && (this.state.end !== null)){
         let rule = null;
         evt.preventDefault()
         this.setState({ loadingStatus: true });
 
+        console.log(this.state.by_day)
+
         if((this.state.recurring !== null) && 
            (this.state.recurring !== 'DOES-NOT-REPEAT') && 
-           (this.state.recurring !== '')){
+           (this.state.recurring !== '') && (this.state.end_recurrence)){
 
             rule = new RRule({
                 freq: this.frequency(this.state.recurring), 
+                byweekday: this.byday(this.state.by_day),
                 count: this.state.count,
                 dtstart: new Date(this.state.start),
                 until: new Date(this.state.end_recurrence)
@@ -190,6 +223,24 @@ class NewEventForm extends Component {
                             <Form.Control.Feedback type="invalid">
                                 Please provide a valid recurring end date/time.
                             </Form.Control.Feedback>
+                            </Col>
+                    </Form.Row><br/>
+
+                    <Form.Row>
+                            <Form.Label column lg={3}>Repeats on? </Form.Label>
+                            <Col xs={4}>
+                            <Form.Control as="select" multiple
+                                id="by_day"
+                                onChange={this.handleMultipleInputChange}
+                            >
+                                <option value="SU">Sunday</option>
+                                <option value="MO">Monday</option>
+                                <option value="TU">Tuesday</option>
+                                <option value="WE">Wednesday</option>
+                                <option value="TH">Thursday</option>
+                                <option value="FR">Friday</option>
+                                <option value="SA">Saturday</option>
+                            </Form.Control>
                             </Col>
                     </Form.Row><br/>
                     </> 

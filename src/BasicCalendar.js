@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { Calendar, momentLocalizer } from 'react-big-calendar';
-import {Container, Button} from 'react-bootstrap'
+import {Container, Button, Spinner} from 'react-bootstrap'
 import { RRule } from 'rrule'
 import moment from 'moment';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
@@ -96,6 +96,14 @@ class BasicCalendar extends Component {
     console.log("this.state.events", this.state.events)
     return (
       <Container>
+        {/* {this.state.events === null ?
+        <Container>
+          <Spinner animation="border" role="status">
+            <span className="sr-only">Loading...</span>
+          </Spinner>
+        </Container>
+        :
+        <div> */}
           <div style={{ height: '400pt', margin: '2em'}}>
             <Calendar
               events={this.state.events}
@@ -107,6 +115,8 @@ class BasicCalendar extends Component {
             />
           </div>
           <Button variant="success" onClick={()=>this.props.history.push('/calendar/create')}>Create New Event</Button>
+        {/* </div>
+        } */}
       </Container>
     );
   }

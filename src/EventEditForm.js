@@ -11,8 +11,10 @@ class EventEditForm extends Component {
       end: "",
       recurring: "",
       count: "",
+      by_day: [],
       end_recurrence: "",
       ical_string: "",
+      text_rule: "",
       loadingStatus: true,
       form_validated: false,
     };
@@ -21,6 +23,11 @@ class EventEditForm extends Component {
       const stateToChange = {}
       stateToChange[evt.target.id] = evt.target.value
       this.setState(stateToChange)
+    }
+
+    handleMultipleInputChange = (event) => {
+        const value = Array.from(event.target.selectedOptions, (item) => item.value);
+        this.setState({by_day: value});
     }
 
     handleValidation = (event) => {
@@ -43,6 +50,30 @@ class EventEditForm extends Component {
         }
     }
 
+    byday = (dayFrequency) => {
+        var days = []
+        if(dayFrequency){
+            dayFrequency.forEach(day => {
+                if (day === "MO"){
+                    days.push(RRule.MO)
+                }else if (day === "TU"){
+                    days.push(RRule.TU)
+                }else if(day === "WE"){
+                    days.push(RRule.WE)
+                }else if(day === "TH"){
+                    days.push(RRule.TH)
+                }else if(day === "FR"){
+                    days.push(RRule.FR)
+                }else if(day === "SA"){
+                    days.push(RRule.SA)
+                }else if(day === "SU"){
+                    days.push(RRule.SU)
+                }
+            })
+            return days
+        }
+    }
+
     updateExistingEvent = evt => {
         if ((this.state.title) && (this.state.start) && (this.state.end)){
             let rule = null;
@@ -51,10 +82,11 @@ class EventEditForm extends Component {
             
             if((this.state.recurring !== null) && 
             (this.state.recurring !== "DOES-NOT-REPEAT") && 
-            (this.state.recurring !== "") && (this.state.end_recurrence)){
+            (this.state.recurring !== "") && (this.state.end_recurrence || this.state.count)){
 
                     rule = new RRule({
                         freq: this.frequency(this.state.recurring), 
+                        byweekday: this.byday(this.state.by_day),
                         count: this.state.count,
                         dtstart: new Date(this.state.start),
                         until: new Date(this.state.end_recurrence)
@@ -106,12 +138,31 @@ class EventEditForm extends Component {
             loadingStatus: false,
           })
             if(this.state.ical_string){
+                var days;
+                var daysArray = []
+                var stringCount; 
+
                 var ical_array = this.state.ical_string.split(';').map(ical_option => ical_option.split('='))
+                console.log(ical_array)
                 
+                if(((ical_array[1])[0]) === "BYDAY"){
+                    days = (ical_array[1])[1]
+                    daysArray = days.split(',')
+                } else if (((ical_array[1])[0]) === "COUNT"){
+                    stringCount = (ical_array[1])[1]
+                }
+
+                if(((ical_array[ical_array.length - 2])[0]) === "COUNT"){
+                    stringCount = (ical_array[ical_array.length - 2])[1]
+                }
+
+
                 this.setState({
                     recurring: ((ical_array[0])[1]),
-                    count: (ical_array[1])[1],
-                    end_recurrence: moment.utc((ical_array[2])[1]).local().format('YYYY-MM-DDTHH:mm:ss')
+                    by_day: daysArray,
+                    count: stringCount,
+                    end_recurrence: moment.utc((ical_array[ical_array.length - 1])[1]).local().format('YYYY-MM-DDTHH:mm:ss'),
+                    text_rule: RRule.fromString(this.state.ical_string).toText()
                 })
             } else{
                 this.setState({
@@ -231,6 +282,30 @@ class EventEditForm extends Component {
                                 </Form.Control.Feedback>
                                 </Col>
                         </Form.Row><br/>
+
+                        <Form.Row>
+                            <Form.Label column lg={3}>Repeats on? </Form.Label>
+                            <Col xs={4}>
+                            <Form.Control as="select" multiple
+                                id="by_day"
+                                value={this.state.by_day}
+                                onChange={this.handleMultipleInputChange}
+                            >
+                                <option value="SU">Sunday</option>
+                                <option value="MO">Monday</option>
+                                <option value="TU">Tuesday</option>
+                                <option value="WE">Wednesday</option>
+                                <option value="TH">Thursday</option>
+                                <option value="FR">Friday</option>
+                                <option value="SA">Saturday</option>
+                            </Form.Control>
+                            </Col>
+                        </Form.Row><br/>
+
+                        <Form.Row>
+                            <p><strong>This event recurs: </strong>{this.state.text_rule}</p>
+                        </Form.Row>
+
                         </> 
                     }
                 </Container>
