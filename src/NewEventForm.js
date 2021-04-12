@@ -83,21 +83,21 @@ class NewEventForm extends Component {
 
         if((this.state.recurring !== null) && 
            (this.state.recurring !== 'DOES-NOT-REPEAT') && 
-           (this.state.recurring !== '') && (this.state.end_recurrence)){
+           (this.state.count || this.state.end_recurrence)){
 
             rule = new RRule({
                 freq: this.frequency(this.state.recurring), 
                 byweekday: this.byday(this.state.by_day),
                 count: this.state.count,
                 dtstart: new Date(this.state.start),
-                until: new Date(this.state.end_recurrence)
+                until: this.state.end_recurrence
             }).toString()
             console.log(rule)
         }
 
         if((this.state.recurring === 'YEARLY') || (this.state.recurring === 'MONTHLY') || (this.state.recurring === 'WEEKLY') || (this.state.recurring === 'DAILY'))
         {
-            if((this.state.count) && (this.state.end_recurrence) && (rule !== null)) {
+            if((this.state.count || this.state.end_recurrence) && (rule !== null)) {
                 const newEvent = {
                     title: this.state.title,
                     start: moment(this.state.start),
@@ -183,7 +183,7 @@ class NewEventForm extends Component {
                             id="recurring"
                             onChange={this.handleFieldChange}
                         >
-                            <option value=''></option>
+                            <option value='DOES-NOT-REPEAT'></option>
                             <option value='DOES-NOT-REPEAT'>Does Not Repeat</option>
                             <option value='DAILY'>Daily</option>
                             <option value='WEEKLY'>Weekly</option>
@@ -193,9 +193,24 @@ class NewEventForm extends Component {
                         </Col>
                 </Form.Row>
 
-                {(this.state.recurring !== null) && (this.state.recurring !== 'DOES-NOT-REPEAT') && (this.state.recurring !== '') &&
+                {(this.state.recurring !== null) && (this.state.recurring !== 'DOES-NOT-REPEAT') &&
                     <>
-                    <Form.Row>
+                    {this.state.end_recurrence ?
+                    <>
+                        <Form.Row>
+                        <Form.Label column lg={3}>How many times will this event occur? </Form.Label>
+                        <Col xs={4}>
+                            <Form.Control
+                                type="text"
+                                onChange={this.handleFieldChange}
+                                id="count"
+                            />
+                            </Col>
+                        </Form.Row><br/>
+                    </>
+                    :
+                    <>
+                        <Form.Row>
                         <Form.Label column lg={3} className="required">How many times will this event occur? </Form.Label>
                         <Col xs={4}>
                             <Form.Control
@@ -208,9 +223,27 @@ class NewEventForm extends Component {
                                 Please provide a valid number.
                             </Form.Control.Feedback>
                             </Col>
-                    </Form.Row><br/>
+                        </Form.Row><br/>
+                    </>
+                    }
 
-                    <Form.Row>
+                    {this.state.count ?
+                    <>
+                        <Form.Row>
+                        <Form.Label column lg={3}>Until when will this recurring event keep occuring? </Form.Label>
+                        <Col xs={4}>
+                            <Form.Control
+                                type="datetime-local"
+                                onChange={this.handleFieldChange}
+                                min={this.state.end}
+                                id="end_recurrence"
+                            />
+                            </Col>
+                        </Form.Row><br/>
+                    </> 
+                    :
+                    <>
+                        <Form.Row>
                         <Form.Label column lg={3} className="required">Until when will this recurring event keep occuring? </Form.Label>
                         <Col xs={4}>
                             <Form.Control
@@ -224,7 +257,25 @@ class NewEventForm extends Component {
                                 Please provide a valid recurring end date/time.
                             </Form.Control.Feedback>
                             </Col>
-                    </Form.Row><br/>
+                        </Form.Row><br/>
+                    </>   
+                    }
+
+                    {/* <Form.Row>
+                        <Form.Label column lg={3} className="required">Until when will this recurring event keep occuring? </Form.Label>
+                        <Col xs={4}>
+                            <Form.Control
+                                type="datetime-local"
+                                onChange={this.handleFieldChange}
+                                min={this.state.end}
+                                required
+                                id="end_recurrence"
+                            />
+                            <Form.Control.Feedback type="invalid">
+                                Please provide a valid recurring end date/time.
+                            </Form.Control.Feedback>
+                            </Col>
+                    </Form.Row><br/> */}
 
                     <Form.Row>
                             <Form.Label column lg={3}>Repeats on? </Form.Label>

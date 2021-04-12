@@ -77,26 +77,33 @@ class EventEditForm extends Component {
     updateExistingEvent = evt => {
         if ((this.state.title) && (this.state.start) && (this.state.end)){
             let rule = null;
+            let untilValue;
             evt.preventDefault()
             this.setState({ loadingStatus: true });
             
             if((this.state.recurring !== null) && 
             (this.state.recurring !== "DOES-NOT-REPEAT") && 
-            (this.state.recurring !== "") && (this.state.end_recurrence || this.state.count)){
+            (this.state.end_recurrence || this.state.count)){
+
+                if(this.state.end_recurrence !== null){
+                    untilValue = new Date(this.state.end_recurrence)
+                }else{
+                    untilValue = null
+                }
 
                     rule = new RRule({
                         freq: this.frequency(this.state.recurring), 
                         byweekday: this.byday(this.state.by_day),
                         count: this.state.count,
                         dtstart: new Date(this.state.start),
-                        until: new Date(this.state.end_recurrence)
+                        until: untilValue
                     }).toString()
                     console.log(rule)
                     
             }
             if((this.state.recurring === 'YEARLY') || (this.state.recurring === 'MONTHLY') || (this.state.recurring === 'WEEKLY') || (this.state.recurring === 'DAILY'))
             {
-                if((this.state.count) && (this.state.end_recurrence) && (rule !== null)) {
+                if((this.state.count || this.state.end_recurrence) && (rule !== null)) {
                     const editedEvent = {
                         id: this.props.match.params.eventId,
                         title: this.state.title,
@@ -140,20 +147,41 @@ class EventEditForm extends Component {
             if(this.state.ical_string){
                 var days;
                 var daysArray = []
-                var stringCount; 
+                var stringCount = null; 
+                var until = null;
 
                 var ical_array = this.state.ical_string.split(';').map(ical_option => ical_option.split('='))
                 console.log(ical_array)
-                
-                if(((ical_array[1])[0]) === "BYDAY"){
-                    days = (ical_array[1])[1]
-                    daysArray = days.split(',')
-                } else if (((ical_array[1])[0]) === "COUNT"){
-                    stringCount = (ical_array[1])[1]
-                }
 
-                if(((ical_array[ical_array.length - 2])[0]) === "COUNT"){
-                    stringCount = (ical_array[ical_array.length - 2])[1]
+                if(ical_array.length > 2){
+
+                    if(((ical_array[1])[0]) === "BYDAY"){
+                        days = (ical_array[1])[1]
+                        daysArray = days.split(',')
+                    } else if (((ical_array[1])[0]) === "COUNT"){
+                        stringCount = (ical_array[1])[1]
+                    } else if (((ical_array[1])[0]) === "UNTIL"){
+                        until = moment.utc((ical_array[1])[1]).local().format('YYYY-MM-DDTHH:mm:ss')
+                    }
+    
+                    if(((ical_array[ical_array.length - 2])[0]) === "COUNT"){
+                        stringCount = (ical_array[ical_array.length - 2])[1]
+                        console.log(((ical_array[ical_array.length - 2])[0]))
+                    } else if(((ical_array[2])[0]) === "COUNT"){
+                        stringCount = (ical_array[2])[1]
+                    }
+    
+                    if (((ical_array[ical_array.length - 1])[0]) === "UNTIL"){
+                        until = moment.utc((ical_array[ical_array.length - 1])[1]).local().format('YYYY-MM-DDTHH:mm:ss')
+                    }
+
+                }
+                else{
+                    if (((ical_array[1])[0]) === "COUNT"){
+                        stringCount = (ical_array[1])[1]
+                    } else if (((ical_array[1])[0]) === "UNTIL"){
+                        until = moment.utc((ical_array[1])[1]).local().format('YYYY-MM-DDTHH:mm:ss')
+                    }
                 }
 
 
@@ -161,7 +189,7 @@ class EventEditForm extends Component {
                     recurring: ((ical_array[0])[1]),
                     by_day: daysArray,
                     count: stringCount,
-                    end_recurrence: moment.utc((ical_array[ical_array.length - 1])[1]).local().format('YYYY-MM-DDTHH:mm:ss'),
+                    end_recurrence: until,
                     text_rule: RRule.fromString(this.state.ical_string).toText()
                 })
             } else{
@@ -238,7 +266,7 @@ class EventEditForm extends Component {
                                 value={this.state.recurring}
                                 onChange={this.handleFieldChange}
                             >
-                                <option value=''></option>
+                                <option value='DOES-NOT-REPEAT'></option>
                                 <option value='DOES-NOT-REPEAT'>Does Not Repeat</option>
                                 <option value='DAILY'>Daily</option>
                                 <option value='WEEKLY'>Weekly</option>
@@ -248,40 +276,77 @@ class EventEditForm extends Component {
                             </Col>
                     </Form.Row>
 
-                    {(this.state.recurring !== null) && (this.state.recurring !== 'DOES-NOT-REPEAT') && (this.state.recurring !== '') &&
+                    {(this.state.recurring !== null) && (this.state.recurring !== 'DOES-NOT-REPEAT') &&
                         <>
-                        <Form.Row>
+                        {this.state.end_recurrence ?
+                        <>
+                            <Form.Row>
+                            <Form.Label column lg={3}>How many times will this event occur? </Form.Label>
+                            <Col xs={4}>
+                            <Form.Control
+                                    type="text"
+                                    onChange={this.handleFieldChange}
+                                    id="count"
+                                    value={this.state.count}
+                                />
+                                </Col>
+                            </Form.Row><br/>
+                        </>
+                        :
+                        <>
+                            <Form.Row>
                             <Form.Label column lg={3} className="required">How many times will this event occur? </Form.Label>
                             <Col xs={4}>
                                 <Form.Control
                                     type="text"
-                                    required
                                     onChange={this.handleFieldChange}
-                                    id="count"
+                                    required
                                     value={this.state.count}
+                                    id="count"
                                 />
                                 <Form.Control.Feedback type="invalid">
                                     Please provide a valid number.
                                 </Form.Control.Feedback>
                                 </Col>
-                        </Form.Row><br/>
+                            </Form.Row><br/>
+                        </>
+                        }
 
-                        <Form.Row>
+                        {this.state.count ?
+                        <>
+                            <Form.Row>
+                            <Form.Label column lg={3}>Until when will this recurring event keep occuring? </Form.Label>
+                            <Col xs={4}>
+                                <Form.Control
+                                    type="datetime-local"
+                                    onChange={this.handleFieldChange}
+                                    min={this.state.end}
+                                    id="end_recurrence"
+                                    value={this.state.end_recurrence}
+                                />
+                                </Col>
+                            </Form.Row><br/>
+                        </> 
+                        :
+                        <>
+                            <Form.Row>
                             <Form.Label column lg={3} className="required">Until when will this recurring event keep occuring? </Form.Label>
                             <Col xs={4}>
                                 <Form.Control
                                     type="datetime-local"
-                                    required
                                     onChange={this.handleFieldChange}
-                                    id="end_recurrence"
                                     min={this.state.end}
+                                    required
+                                    id="end_recurrence"
                                     value={this.state.end_recurrence}
                                 />
                                 <Form.Control.Feedback type="invalid">
                                     Please provide a valid recurring end date/time.
                                 </Form.Control.Feedback>
                                 </Col>
-                        </Form.Row><br/>
+                            </Form.Row><br/>
+                        </>   
+                        }
 
                         <Form.Row>
                             <Form.Label column lg={3}>Repeats on? </Form.Label>
