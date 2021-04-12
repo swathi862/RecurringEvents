@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { Calendar, momentLocalizer } from 'react-big-calendar';
-import {Container, Button, Spinner} from 'react-bootstrap'
+import {Container, Button} from 'react-bootstrap'
 import { RRule } from 'rrule'
 import moment from 'moment';
 import 'react-big-calendar/lib/css/react-big-calendar.css';

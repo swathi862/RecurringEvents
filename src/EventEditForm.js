@@ -85,7 +85,7 @@ class EventEditForm extends Component {
             (this.state.recurring !== "DOES-NOT-REPEAT") && 
             (this.state.end_recurrence || this.state.count)){
 
-                if(this.state.end_recurrence !== null){
+                if(this.state.end_recurrence !== ""){
                     untilValue = new Date(this.state.end_recurrence)
                 }else{
                     untilValue = null
@@ -147,8 +147,8 @@ class EventEditForm extends Component {
             if(this.state.ical_string){
                 var days;
                 var daysArray = []
-                var stringCount = null; 
-                var until = null;
+                var stringCount = ""; 
+                var until = "";
 
                 var ical_array = this.state.ical_string.split(';').map(ical_option => ical_option.split('='))
                 console.log(ical_array)
